@@ -396,7 +396,7 @@
     async function pollOnce(){
       if (paused) return;
 
-      const res = await fetchJson(`${API_BASE}/recent_comments?minutes=3&ts=${Date.now()}`, { timeoutMs: 8000, retries: 0 });
+      const res = await fetchJson(`${API_BASE}/recent_comments?minutes=3&ts=${Date.now()}`, { timeoutMs: 8000, retries: 0 }); 
       if (!res) {
         consecutiveFailures++;
         statusEl.textContent = "reconnecting…";
@@ -549,6 +549,7 @@
 </body>
 
 </html>
+
 
 
 
