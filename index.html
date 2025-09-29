@@ -136,34 +136,29 @@
     </div>
   </div>
   <script>
-// 💥 API BASE URL 💥
-// We load the actual base URL from a separate, non-identifying file/path.
-const API_BASE_PATH = "/api-base.txt"; 
-let API_BASE = ""; // Will be populated by the fetch below
 
-// The entire boot process is now wrapped in an async function to wait for API_BASE.
+const API_BASE_PATH = "/api-base.txt"; 
+let API_BASE = ""; 
+
+
 async function initAndBoot(){
     try {
-        // Fetch the neutral file from your server
         const r = await fetch(API_BASE_PATH);
         if (!r.ok) throw new Error("API Base config not found");
-        
-        // Trim the text to get the actual Worker URL (e.g., https://asxbetslive.mjung4.workers.dev)
+      
         API_BASE = (await r.text()).trim();
         
     } catch (e) {
         showErr("CRITICAL: Failed to load the API Base URL. Check /api-base.txt");
-        return; // Stop if we can't get the URL
+        return; 
     }
     
-    // Now call the original boot function
+    
     boot();
 }
-// Renamed the original self-executing function to 'boot' and call it via initAndBoot below.
-// This function needs to be defined BEFORE the final call.
+
 async function boot(){
-    // [The rest of your existing boot logic goes here]
-    // ...
+
     const h = await fetchJson(API_BASE + "/health", { timeoutMs: 2500, retries: 0 });
     if (!h?.ok) showErr("Backend health check failed. If this persists, your Worker may not be deployed.");
 
@@ -173,10 +168,8 @@ async function boot(){
     setInterval(loadPosts, 60000);
 }
 
-// Call the new setup function to start the entire app
 initAndBoot();
     
-    // ===== tiny fetch helper with timeouts/retries =====
     async function fetchJson(url, { timeoutMs = 4500, retries = 2, backoff = 600 } = {}) {
       for (let a = 0; a <= retries; a++) {
         const ctl = new AbortController();
@@ -213,9 +206,8 @@ initAndBoot();
 
     // ===== ticker detection =====
     // Initial set for ASX context (common ASX stocks)
-    let TICKER_ALLOW = new Set(["BHP","CBA","WBC","ANZ","NAB","CSL","RIO","FMG","APT"]);
+    let TICKER_ALLOW = new Set(["BHP","CBA","WBC","ANZ","NAB","CSL","RIO","FMG","XYZ"]);
     (async () => {
-      // This will attempt to fetch a new list of tickers from the API
       try { const j = await fetchJson(API_BASE + "/tickers", { timeoutMs: 3000, retries: 0 }); if (j?.tickers?.length) TICKER_ALLOW = new Set(j.tickers.map(s=>String(s).toUpperCase())); } catch {}
     })();
     const DYNAMIC_ALLOW = new Set();
@@ -332,7 +324,6 @@ initAndBoot();
     async function backfillTicker(sym){
   if (inflightByTicker.has(sym)) return; inflightByTicker.add(sym);
   try{
-    // INCREASED TIMEOUT: Gives the backend more time to "hydrate" the comment
     const data = await fetchJson(`${API_BASE}/by_ticker?sym=${encodeURIComponent(sym)}&minutes=60&ts=${Date.now()}`, { timeoutMs: 15000, retries: 2 });
         const list = Array.isArray(data) ? data : (data?.items || []);
         for (const item of list){
@@ -370,13 +361,10 @@ let hi = "";
 const PLACEHOLDER = "(preloaded mention; full body not available yet)"; 
 
 if (c.body_html) {
-    // 1. If we have the full HTML, use it (it may contain rich Reddit formatting)
     hi = c.body_html;
 } else if (plain && plain !== PLACEHOLDER) {
-    // 2. If we have actual plain text, highlight tickers and escape HTML
     hi = highlightTickers(escapeHtml(plain));
 } else {
-    // 3. If we are stuck with the placeholder, show a friendly message
     hi = `<span class="text-zinc-500 text-xs">Fetching full comment body... Please wait, or click "Open on Reddit ↗"</span>`;
 }
         card.innerHTML = `
@@ -611,6 +599,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
