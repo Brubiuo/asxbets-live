@@ -350,9 +350,9 @@ if (c.body_html) {
               <span class="chip">${when}</span>
             </div>
             <a href="${c.permalink}" target="_blank" rel="noopener" class="underline decoration-dotted">Open on Reddit ↗</a>
-          </header>
-          ${c.postTitle ? `<h4 class="font-semibold text-sm mb-2">${escapeHtml(c.postTitle)}</h4>` : ``}
-          <div class="text-sm body-html"><p>${hi}</p></div>
+          </header>
+          ${c.postTitle ? `<h4 class="font-semibold text-sm mb-2">${escapeHtml(c.postTitle)}</h4>` : ``}
+          <div class="text-sm body-html">${hi}</div>
         `;
         modalList.appendChild(card);
       }
@@ -574,6 +574,7 @@ function blockHtml(meta, plainText, isCurrent=false){
 </body>
 
 </html>
+
 
 
 
