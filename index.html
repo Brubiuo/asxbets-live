@@ -325,8 +325,8 @@
         const card = document.createElement("article");
         card.className = "frame p-3 md:p-4";
         const when = timeAgo(c.t);
-        const plain = (c.body_html ? stripHtmlToText(c.body_html) : (c.body || "")).trim();
-        const hi = highlightTickers(escapeHtml(plain || "(preloaded mention; full body not available yet)"));
+const plain = (c.body_html ? stripHtmlToText(c.body_html) : (c.body || "")).trim();
+let hi = "";
         card.innerHTML = `
           <header class="flex items-center justify-between text-xs text-zinc-300 mb-2">
             <div class="flex items-center gap-2 flex-wrap">
@@ -559,6 +559,7 @@ function blockHtml(meta, plainText, isCurrent=false){
 </body>
 
 </html>
+
 
 
 
