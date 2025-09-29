@@ -327,6 +327,20 @@
         const when = timeAgo(c.t);
 const plain = (c.body_html ? stripHtmlToText(c.body_html) : (c.body || "")).trim();
 let hi = "";
+
+// The placeholder text used when indexing a preloaded comment mention
+const PLACEHOLDER = "(preloaded mention; full body not available yet)"; 
+
+if (c.body_html) {
+    // 1. If we have the full HTML, use it (it may contain rich Reddit formatting)
+    hi = c.body_html;
+} else if (plain && plain !== PLACEHOLDER) {
+    // 2. If we have actual plain text, highlight tickers and escape HTML
+    hi = highlightTickers(escapeHtml(plain));
+} else {
+    // 3. If we are stuck with the placeholder, show a friendly message
+    hi = `<span class="text-zinc-500 text-xs">Fetching full comment body... Please wait, or click "Open on Reddit ↗"</span>`;
+}
         card.innerHTML = `
           <header class="flex items-center justify-between text-xs text-zinc-300 mb-2">
             <div class="flex items-center gap-2 flex-wrap">
@@ -559,6 +573,7 @@ function blockHtml(meta, plainText, isCurrent=false){
 </body>
 
 </html>
+
 
 
 
