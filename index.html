@@ -439,33 +439,42 @@
     }
 
     function renderMain({ comment, parents, post }){
-      const node = tmpl.content.firstElementChild.cloneNode(true);
-      q(node,"[data-author]").textContent = formatUser(comment.author);
-      q(node,"[data-score]").textContent = comment.score ?? 0;
-      q(node,"[data-time]").textContent  = timeAgo(comment.created_utc*1000);
-      q(node,"[data-post-link]").textContent = post?.title || "(post)";
-      q(node,"[data-post-link]").href = post?.permalink || "#";
-      q(node,"[data-comment-link]").href = comment.permalink;
+      const node = tmpl.content.firstElementChild.cloneNode(true);
+      q(node,"[data-author]").textContent = formatUser(comment.author);
+      q(node,"[data-score]").textContent = comment.score ?? 0;
+      q(node,"[data-time]").textContent  = timeAgo(comment.created_utc*1000);
+      q(node,"[data-post-link]").textContent = post?.title || "(post)";
+      q(node,"[data-post-link]").href = post?.permalink || "#";
+      q(node,"[data-comment-link]").href = comment.permalink;
 
-      const thread = q(node, "[data-thread]");
-      (parents||[]).forEach(p => {
+      const thread = q(node, "[data-thread]");
+      
+      // --- 1. Render PARENT comments ---
+      (parents||[]).forEach(p => {
+        // Get the plain text from the parent body, stripping any HTML
+        const plainText = stripHtmlToText(p.body_html || "") || p.body || "";
+        // blockHtml will apply highlightTickers and escapeHtml internally
+        thread.appendChild(blockHtml(p, plainText, false));
+      });
+      
+      // --- 2. Render CURRENT comment ---
+      // Get the plain text from the current comment body, stripping any HTML
       const cText = stripHtmlToText(comment.body_html || "") || comment.body || "";
-      const escapedText = escapeHtml(cText);
-      });
- thread.appendChild(blockHtml(comment, escapedText, true));
+      // blockHtml will apply highlightTickers and escapeHtml internally
+      thread.appendChild(blockHtml(comment, cText, true));
 
-      const ts = Math.min((comment.created_utc||0)*1000, Date.now());
-      if (ts > _lastShownMs) _lastShownMs = ts;
+      const ts = Math.min((comment.created_utc||0)*1000, Date.now());
+      if (ts > _lastShownMs) _lastShownMs = ts;
 
-      const commentId = comment.id || comment.name || comment.permalink;
-      const plain = stripHtmlToText(comment.body_html||"") || comment.body || "";
-      addCommentMentions(commentId, plain);
-      indexCommentMentions({...comment, post}, plain);
+      const commentId = comment.id || comment.name || comment.permalink;
+      const plain = stripHtmlToText(comment.body_html||"") || comment.body || "";
+      addCommentMentions(commentId, plain);
+      indexCommentMentions({...comment, post}, plain);
 
-      mainPane.innerHTML = "";
-      mainPane.appendChild(node);
-      statusEl.textContent = "live";
-    }
+      mainPane.innerHTML = "";
+      mainPane.appendChild(node);
+      statusEl.textContent = "live";
+    }
     function q(node, sel){ return node.querySelector(sel); }
 function blockHtml(meta, plainText, isCurrent=false){
   // Ticker highlighting is always applied to the plain text
@@ -550,6 +559,7 @@ function blockHtml(meta, plainText, isCurrent=false){
 </body>
 
 </html>
+
 
 
 
