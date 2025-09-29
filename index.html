@@ -468,15 +468,16 @@
       statusEl.textContent = "live";
     }
     function q(node, sel){ return node.querySelector(sel); }
-    function blockHtml(meta, innerContent, isCurrent=false, isRawHtml=false){
-      const inner = isRawHtml ? innerContent : highlightTickers(innerContent);
-      
-      const wrap = document.createElement("div");
-      wrap.className = isCurrent ? "current-block gain-border" : "parent-block";
-      if (isCurrent) wrap.classList.add("flash");
-      wrap.innerHTML = `<div class="text-xs text-zinc-300 mb-2">u:${escapeHtml(formatUser(meta.author))} • ${timeAgo(meta.created_utc * 1000)} • score ${meta.score ?? 0}</div><div class="text-sm body-html">${inner}</div>`;
-      return wrap;
-    }
+function blockHtml(meta, plainText, isCurrent=false){
+  // Ticker highlighting is always applied to the plain text
+  const inner = highlightTickers(plainText);
+  
+  const wrap = document.createElement("div");
+  wrap.className = isCurrent ? "current-block gain-border" : "parent-block";
+  if (isCurrent) wrap.classList.add("flash");
+  wrap.innerHTML = `<div class="text-xs text-zinc-300 mb-2">u:${escapeHtml(formatUser(meta.author))} • ${timeAgo(meta.created_utc * 1000)} • score ${meta.score ?? 0}</div><div class="text-sm body-html">${inner}</div>`;
+  return wrap;
+}
     // ===== preload top tickers (1h) on boot, with retries =====
     async function preheatTopTickers(minutes=60){
       for (let attempt = 1; attempt <= 6; attempt++) {
@@ -550,6 +551,7 @@
 </body>
 
 </html>
+
 
 
 
