@@ -309,40 +309,54 @@
     }
     function openModal(sym){ openModalSym = sym; renderModal(sym); if (getRecentComments(sym).length === 0) backfillTicker(sym); modalEl.classList.remove("hidden"); document.body.style.overflow = "hidden"; }
     function closeModal(){ openModalSym = null; modalEl.classList.add("hidden"); document.body.style.overflow = ""; modalList.innerHTML = ""; }
-    function renderModal(sym){
-      const items = getRecentComments(sym);
-      modalTitle.innerHTML = `<span class="ticker-label">${sym}</span> comments`;
-      modalSubtitle.textContent = `${items.length} mention${items.length===1?"":"s"} in the last hour`;
-      modalList.innerHTML = "";
-      if (!items.length){
-        const empty = document.createElement("div");
-        empty.className = "text-sm text-zinc-400";
-        empty.textContent = "Fetching comments for this ticker…";
-        modalList.appendChild(empty);
-        return;
-      }
-      for (const c of items){
-        const card = document.createElement("article");
-        card.className = "frame p-3 md:p-4";
-        const when = timeAgo(c.t);
-const plain = (c.body_html ? stripHtmlToText(c.body_html) : (c.body || "")).trim();
+function renderModal(sym){
+      const items = getRecentComments(sym);
+      modalTitle.innerHTML = `<span class="ticker-label">${sym}</span> comments`;
+      modalSubtitle.textContent = `${items.length} mention${items.length===1?"":"s"} in the last hour`;
+      modalList.innerHTML = "";
+      if (!items.length){
+        const empty = document.createElement("div");
+        empty.className = "text-sm text-zinc-400";
+        empty.textContent = "Fetching comments for this ticker…";
+        modalList.appendChild(empty);
+        return;
+      }
+      for (const c of items){
+        const card = document.createElement("article");
+        card.className = "frame p-3 md:p-4";
+        const when = timeAgo(c.t);
+// const plain = (c.body_html ? stripHtmlToText(c.body_html) : (c.body || "")).trim(); // <-- Removed, not needed
 let hi = "";
 
 // The placeholder text used when indexing a preloaded comment mention
 const PLACEHOLDER = "(preloaded mention; full body not available yet)"; 
 
 if (c.body_html) {
-    // 1. If we have the full HTML, use it (best for formatting)
-    hi = c.body_html;
+    // 1. If we have the full HTML, use it (best for formatting)
+    hi = c.body_html;
 } else if (c.body && c.body.trim() !== PLACEHOLDER) {
-    // 2. If we have actual plain text (which happens when the Worker backfills but body_html is null)
-    // We escape it and then highlight
-    hi = highlightTickers(escapeHtml(c.body));
+    // 2. If we have actual plain text, escape it and then highlight
+    hi = highlightTickers(escapeHtml(c.body));
 } else {
-    // 3. Fallback: If both are missing or we are stuck with the seed PLACEHOLDER, show the loading message.
-    hi = `<span class="text-zinc-500 text-xs">Fetching full comment body... Please wait, or click "Open on Reddit ↗"</span>`;
+    // 3. Fallback: If both are missing or we are stuck with the seed PLACEHOLDER, show the loading message.
+    hi = `<span class="text-zinc-500 text-xs">Fetching full comment body... Please wait, or click "Open on Reddit ↗"</span>`;
 }
-// --- Replace the logic within the <div> tag in the innerHTML below ---
+// --- Correct Card Rendering ---
+        card.innerHTML = `
+          <header class="flex items-center justify-between text-xs text-zinc-300 mb-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="chip">u:${escapeHtml(formatUser(c.author))}</span>
+              <span class="chip">score ${c.score ?? 0}</span>
+              <span class="chip">${when}</span>
+            </div>
+            <a href="${c.permalink}" target="_blank" rel="noopener" class="underline decoration-dotted">Open on Reddit ↗</a>
+          </header>
+          ${c.postTitle ? `<h4 class="font-semibold text-sm mb-2">${escapeHtml(c.postTitle)}</h4>` : ``}
+          <div class="text-sm body-html">${hi}</div>
+        `;
+        modalList.appendChild(card);
+      } // <-- This is the only place the loop should close
+}
 
 card.innerHTML = `
           <header class="flex items-center justify-between text-xs text-zinc-300 mb-2">
@@ -590,6 +604,7 @@ function blockHtml(meta, plainText, isCurrent=false){
 </body>
 
 </html>
+
 
 
 
