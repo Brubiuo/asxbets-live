@@ -195,7 +195,7 @@
     const TOP_TICKERS_N = 15;
     const WINDOW_MS = 60*60*1000;
     const mentionQueue = []; const counts = new Map(); const countedComments = new Set(); const commentsByTicker = new Map();
-    let hiddenTickers = new Set(JSON.parse(localStorage.getItem("wsb_hidden_tickers") || "[]"));
+    let hiddenTickers = new Set(JSON.parse(localStorage.getItem("asx_hidden_tickers") || "[]"));
     const saveHidden = ()=> localStorage.setItem("wsb_hidden_tickers", JSON.stringify([...hiddenTickers]));
 
     function addCommentMentions(commentId, plainText){
@@ -549,6 +549,7 @@
 </body>
 
 </html>
+
 
 
 
