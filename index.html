@@ -449,11 +449,10 @@
 
       const thread = q(node, "[data-thread]");
       (parents||[]).forEach(p => {
-        const txt = p.body_html ? escapeHtml(stripHtmlToText(p.body_html)) : escapeHtml(p.body || "");
-        thread.appendChild(blockHtml(p, txt, false));
+      const cText = stripHtmlToText(comment.body_html || "") || comment.body || "";
+      const escapedText = escapeHtml(cText);
       });
-      const cHtml = comment.body_html || escapeHtml(comment.body || "");
-      thread.appendChild(blockHtml(comment, cHtml, true, true)); // Pass a new flag for 'rawHtml'
+ thread.appendChild(blockHtml(comment, escapedText, true));
 
       const ts = Math.min((comment.created_utc||0)*1000, Date.now());
       if (ts > _lastShownMs) _lastShownMs = ts;
@@ -551,6 +550,7 @@ function blockHtml(meta, plainText, isCurrent=false){
 </body>
 
 </html>
+
 
 
 
