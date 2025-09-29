@@ -309,7 +309,7 @@
     }
     function openModal(sym){ openModalSym = sym; renderModal(sym); if (getRecentComments(sym).length === 0) backfillTicker(sym); modalEl.classList.remove("hidden"); document.body.style.overflow = "hidden"; }
     function closeModal(){ openModalSym = null; modalEl.classList.add("hidden"); document.body.style.overflow = ""; modalList.innerHTML = ""; }
-function renderModal(sym){
+    function renderModal(sym){
       const items = getRecentComments(sym);
       modalTitle.innerHTML = `<span class="ticker-label">${sym}</span> comments`;
       modalSubtitle.textContent = `${items.length} mention${items.length===1?"":"s"} in the last hour`;
@@ -325,31 +325,22 @@ function renderModal(sym){
         const card = document.createElement("article");
         card.className = "frame p-3 md:p-4";
         const when = timeAgo(c.t);
-        
-        let hi = "";
-        
-        // The placeholder text used when indexing a preloaded comment mention (from the seed function)
-        const PLACEHOLDER = "(preloaded mention; full body not available yet)"; 
-        
-        // Determine the content to display:
-        if (c.body_html) {
-            // Option 1: Full HTML is available (best quality)
-            hi = c.body_html;
-        } else if (c.body && c.body.trim() !== PLACEHOLDER) {
-            // Option 2: Plain text body is available AND it is NOT the placeholder/seed message
-            const plain = c.body.trim();
-            hi = highlightTickers(escapeHtml(plain));
-        } else {
-            // Option 3: Fallback (either missing content or stuck on the seed placeholder)
-            hi = `<span class="text-zinc-500 text-xs">Fetching full comment body... Please wait, or click "Open on Reddit ↗"</span>`;
-        }
+const plain = (c.body_html ? stripHtmlToText(c.body_html) : (c.body || "")).trim();
+let hi = "";
 
-        // Wrap the content in <p> tags if it's not already HTML, to match the original style
-        if (hi.indexOf('<') === -1) {
-            hi = `<p>${hi}</p>`;
-        }
-        
-        // Render the card
+// The placeholder text used when indexing a preloaded comment mention
+const PLACEHOLDER = "(preloaded mention; full body not available yet)"; 
+
+if (c.body_html) {
+    // 1. If we have the full HTML, use it (it may contain rich Reddit formatting)
+    hi = c.body_html;
+} else if (plain && plain !== PLACEHOLDER) {
+    // 2. If we have actual plain text, highlight tickers and escape HTML
+    hi = highlightTickers(escapeHtml(plain));
+} else {
+    // 3. If we are stuck with the placeholder, show a friendly message
+    hi = `<span class="text-zinc-500 text-xs">Fetching full comment body... Please wait, or click "Open on Reddit ↗"</span>`;
+}
         card.innerHTML = `
           <header class="flex items-center justify-between text-xs text-zinc-300 mb-2">
             <div class="flex items-center gap-2 flex-wrap">
@@ -360,7 +351,7 @@ function renderModal(sym){
             <a href="${c.permalink}" target="_blank" rel="noopener" class="underline decoration-dotted">Open on Reddit ↗</a>
           </header>
           ${c.postTitle ? `<h4 class="font-semibold text-sm mb-2">${escapeHtml(c.postTitle)}</h4>` : ``}
-          <div class="text-sm body-html">${hi}</div>
+          <div class="text-sm body-html"><p>${hi}</p></div>
         `;
         modalList.appendChild(card);
       }
@@ -461,59 +452,53 @@ function renderModal(sym){
       }
     }
 
-function renderMain({ comment, parents, post }){
-      const node = tmpl.content.firstElementChild.cloneNode(true);
-      q(node,"[data-author]").textContent = formatUser(comment.author);
-      q(node,"[data-score]").textContent = comment.score ?? 0;
-      q(node,"[data-time]").textContent  = timeAgo(comment.created_utc*1000);
-      q(node,"[data-post-link]").textContent = post?.title || "(post)";
-      q(node,"[data-post-link]").href = post?.permalink || "#";
-      q(node,"[data-comment-link]").href = comment.permalink;
+    function renderMain({ comment, parents, post }){
+      const node = tmpl.content.firstElementChild.cloneNode(true);
+      q(node,"[data-author]").textContent = formatUser(comment.author);
+      q(node,"[data-score]").textContent = comment.score ?? 0;
+      q(node,"[data-time]").textContent  = timeAgo(comment.created_utc*1000);
+      q(node,"[data-post-link]").textContent = post?.title || "(post)";
+      q(node,"[data-post-link]").href = post?.permalink || "#";
+      q(node,"[data-comment-link]").href = comment.permalink;
 
-      const thread = q(node, "[data-thread]");
-      
-      // --- 1. Render PARENT comments ---
-      (parents||[]).forEach(p => {
-        // blockHtml will now handle content rendering, including HTML or escaped text
-        thread.appendChild(blockHtml(p, false));
-      });
-      
-      // --- 2. Render CURRENT comment ---
-      // blockHtml will now handle content rendering, including HTML or escaped text
-      thread.appendChild(blockHtml(comment, true));
+      const thread = q(node, "[data-thread]");
+      
+      // --- 1. Render PARENT comments ---
+      (parents||[]).forEach(p => {
+        // Get the plain text from the parent body, stripping any HTML
+        const plainText = stripHtmlToText(p.body_html || "") || p.body || "";
+        // blockHtml will apply highlightTickers and escapeHtml internally
+        thread.appendChild(blockHtml(p, plainText, false));
+      });
+      
+      // --- 2. Render CURRENT comment ---
+      // Get the plain text from the current comment body, stripping any HTML
+      const cText = stripHtmlToText(comment.body_html || "") || comment.body || "";
+      // blockHtml will apply highlightTickers and escapeHtml internally
+      thread.appendChild(blockHtml(comment, cText, true));
 
-      const ts = Math.min((comment.created_utc||0)*1000, Date.now());
-      if (ts > _lastShownMs) _lastShownMs = ts;
+      const ts = Math.min((comment.created_utc||0)*1000, Date.now());
+      if (ts > _lastShownMs) _lastShownMs = ts;
 
-      const commentId = comment.id || comment.name || comment.permalink;
-      // Get plain text for ticker detection/indexing
-      const plain = stripHtmlToText(comment.body_html||"") || comment.body || "";
-      addCommentMentions(commentId, plain);
-      indexCommentMentions({...comment, post}, plain);
+      const commentId = comment.id || comment.name || comment.permalink;
+      const plain = stripHtmlToText(comment.body_html||"") || comment.body || "";
+      addCommentMentions(commentId, plain);
+      indexCommentMentions({...comment, post}, plain);
 
-      mainPane.innerHTML = "";
-      mainPane.appendChild(node);
-      statusEl.textContent = "live";
-    }
+      mainPane.innerHTML = "";
+      mainPane.appendChild(node);
+      statusEl.textContent = "live";
+    }
     function q(node, sel){ return node.querySelector(sel); }
-function blockHtml(meta, isCurrent=false){
-  // Determine content based on availability (like in renderModal)
-  let innerHtml = '';
-  if (meta.body_html) {
-    // 1. Use the full Reddit HTML if available
-    innerHtml = meta.body_html;
-  } else {
-    // 2. Fall back to plain text, escape it, highlight tickers, and wrap it in <p>
-    const plainText = meta.body || '';
-    const escapedAndHighlighted = highlightTickers(escapeHtml(plainText));
-    innerHtml = `<p>${escapedAndHighlighted}</p>`;
-  }
- 
-  const wrap = document.createElement("div");
-  wrap.className = isCurrent ? "current-block gain-border" : "parent-block";
-  if (isCurrent) wrap.classList.add("flash");
-  wrap.innerHTML = `<div class="text-xs text-zinc-300 mb-2">u:${escapeHtml(formatUser(meta.author))} • ${timeAgo(meta.created_utc * 1000)} • score ${meta.score ?? 0}</div><div class="text-sm body-html">${innerHtml}</div>`;
-  return wrap;
+function blockHtml(meta, plainText, isCurrent=false){
+  // Ticker highlighting is always applied to the plain text
+  const inner = highlightTickers(plainText);
+  
+  const wrap = document.createElement("div");
+  wrap.className = isCurrent ? "current-block gain-border" : "parent-block";
+  if (isCurrent) wrap.classList.add("flash");
+  wrap.innerHTML = `<div class="text-xs text-zinc-300 mb-2">u:${escapeHtml(formatUser(meta.author))} • ${timeAgo(meta.created_utc * 1000)} • score ${meta.score ?? 0}</div><div class="text-sm body-html">${inner}</div>`;
+  return wrap;
 }
     // ===== preload top tickers (1h) on boot, with retries =====
     async function preheatTopTickers(minutes=60){
@@ -588,9 +573,6 @@ function blockHtml(meta, isCurrent=false){
 </body>
 
 </html>
-
-
-
 
 
 
