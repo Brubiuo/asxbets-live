@@ -293,9 +293,10 @@
       return fresh;
     }
     async function backfillTicker(sym){
-      if (inflightByTicker.has(sym)) return; inflightByTicker.add(sym);
-      try{
-        const data = await fetchJson(`${API_BASE}/by_ticker?sym=${encodeURIComponent(sym)}&minutes=60&ts=${Date.now()}`, { timeoutMs: 6000, retries: 2 });
+  if (inflightByTicker.has(sym)) return; inflightByTicker.add(sym);
+  try{
+    // INCREASED TIMEOUT: Gives the backend more time to "hydrate" the comment
+    const data = await fetchJson(`${API_BASE}/by_ticker?sym=${encodeURIComponent(sym)}&minutes=60&ts=${Date.now()}`, { timeoutMs: 15000, retries: 2 });
         const list = Array.isArray(data) ? data : (data?.items || []);
         for (const item of list){
           const c = item.comment || item;
@@ -573,6 +574,7 @@ function blockHtml(meta, plainText, isCurrent=false){
 </body>
 
 </html>
+
 
 
 
