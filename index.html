@@ -494,19 +494,6 @@ async function pollOnce(){
         statusEl.textContent = "live";
     }
 }
-
-      if (_lastRendered) {
-        renderMain(_lastRendered);
-      } else {
-        const post = chosen.post || { title: chosen.postTitle, permalink: chosen.postPermalink || chosen.permalink };
-        const parents = chosen.parents || [];
-        const payload = { comment: c, parents, post };
-        renderNewComment(payload);
-        _lastRendered = payload;
-      }
-    }
-
-// --- UPDATED renderNewComment FUNCTION (Replaces renderMain) ---
 const MAX_COMMENTS = 25; // Limit the feed to the last 25 comments
 
 function renderNewComment({ comment, parents, post }){
@@ -633,6 +620,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
