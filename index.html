@@ -69,10 +69,13 @@
     <div id="err" class="mb-4 p-3 rounded-lg border border-red-400/50 text-red-200 bg-red-950/30"></div>
     <div class="grid grid-cols-1 lg:grid-cols-7 gap-6">
       <main class="glass rounded-2xl p-4 md:p-6 col-span-1 lg:col-span-5 min-h-[65vh]">
-        <div class="flex items-center gap-3 mb-3 flex-wrap">
-          <button id="pauseBtn" class="btn-pause" type="button">Pause</button>
-          <span class="text-xs text-zinc-400"><strong>Live Updates</strong></span>
-        </div>
+<div class="flex items-center gap-3 mb-3 flex-wrap">
+  <button id="pauseBtn" class="btn-pause" type="button">Pause</button>
+  <span class="text-xs text-zinc-400 live-wrap">
+    <span id="liveDotSecondary" class="live-dot" aria-hidden="true"></span>
+    <strong>Live Updates</strong>
+  </span>
+</div>
         <div id="main-pane" class="space-y-4"></div>
       </main>
       <aside class="col-span-1 lg:col-span-2">
@@ -226,7 +229,7 @@ initAndBoot();
     const WINDOW_MS = 60*60*1000;
     const mentionQueue = []; const counts = new Map(); const countedComments = new Set(); const commentsByTicker = new Map();
     let hiddenTickers = new Set(JSON.parse(localStorage.getItem("asx_hidden_tickers") || "[]"));
-    const saveHidden = ()=> localStorage.setItem("wsb_hidden_tickers", JSON.stringify([...hiddenTickers]));
+    const saveHidden = ()=> localStorage.setItem("asx_hidden_tickers", JSON.stringify([...hiddenTickers]));
 
     function addCommentMentions(commentId, plainText){
       if (!plainText || countedComments.has(commentId)) return;
@@ -603,6 +606,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
