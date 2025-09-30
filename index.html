@@ -403,15 +403,17 @@ if (c.body_html) {
     let consecutiveFailures = 0;
     const MAX_SHOWN_COMMENTS = 5; // Limit the total number of comments in the main pane
     
-      paused = p;
-      pauseBtn.textContent = paused ? "Unpause" : "Pause";
-      liveDot.classList.toggle("paused", paused);
-      statusEl.textContent = paused ? "paused" : "live";
-      if (paused) stopTimers(); else startTimers();
-    }
-    pauseBtn.addEventListener("click", () => setPaused(!paused));
+  function setPaused(p){
+    paused = p;
+    pauseBtn.textContent = paused ? "Unpause" : "Pause";
+    liveDot.classList.toggle("paused", paused);
+    statusEl.textContent = paused ? "paused" : "live";
+    if (paused) stopTimers(); else startTimers();
+} // <-- Correct closing brace
 
-    function startTimers(){
+pauseBtn.addEventListener("click", () => setPaused(!paused));
+
+function startTimers(){
       stopTimers();
       tickTimer = setInterval(pollOnce, 5000);
       healthTimer = setInterval(healthCheck, 15000);
@@ -601,6 +603,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
