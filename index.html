@@ -465,10 +465,10 @@ async function pollOnce(){
         }));
 
     // 2. Filter for new comments (created *after* the last shown one)
-    const newComments = payloads
-        .filter(payload => ((payload.comment?.created_utc || 0) * 1000) > _lastShownMs)
-        // 3. Sort in chronological order so we process them correctly and find the latest one
-        .sort((a, b) => (a.comment.created_utc || 0) - (b.comment.created_utc || 0));
+const newComments = payloads
+    .filter(payload => ((payload.comment?.created_utc || 0) * 1000) > _lastShownMs)
+    // 3. Sort in REVERSE chronological order (newest first) for display
+    .sort((a, b) => (b.comment.created_utc || 0) - (a.comment.created_utc || 0)); 
 
     if (newComments.length > 0) {
         // 4. Render all the new comments
@@ -604,6 +604,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
