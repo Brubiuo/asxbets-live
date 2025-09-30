@@ -402,10 +402,7 @@ if (c.body_html) {
     let healthTimer = null;
     let consecutiveFailures = 0;
     const MAX_SHOWN_COMMENTS = 5; // Limit the total number of comments in the main pane
-
-function setPaused(p){
-
-    function setPaused(p){
+    
       paused = p;
       pauseBtn.textContent = paused ? "Unpause" : "Pause";
       liveDot.classList.toggle("paused", paused);
@@ -604,6 +601,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
