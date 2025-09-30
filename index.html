@@ -433,7 +433,9 @@ if (c.body_html) {
         statusEl.textContent = "live";
       }
     }
-
+// --- UPDATED pollOnce FUNCTION ---
+let _lastShownMs = 0; // Keep track of the last comment time shown
+let _lastRendered = null; // Can remove if we don't need to re-render old data on failure
 async function pollOnce(){
     if (paused) return;
 
@@ -499,48 +501,54 @@ async function pollOnce(){
         const post = chosen.post || { title: chosen.postTitle, permalink: chosen.postPermalink || chosen.permalink };
         const parents = chosen.parents || [];
         const payload = { comment: c, parents, post };
-        renderMain(payload);
+        renderNewComment(payload);
         _lastRendered = payload;
       }
     }
 
-    function renderMain({ comment, parents, post }){
-      const node = tmpl.content.firstElementChild.cloneNode(true);
-      q(node,"[data-author]").textContent = formatUser(comment.author);
-      q(node,"[data-score]").textContent = comment.score ?? 0;
-      q(node,"[data-time]").textContent  = timeAgo(comment.created_utc*1000);
-      q(node,"[data-post-link]").textContent = post?.title || "(post)";
-      q(node,"[data-post-link]").href = post?.permalink || "#";
-      q(node,"[data-comment-link]").href = comment.permalink;
+// --- UPDATED renderNewComment FUNCTION (Replaces renderMain) ---
+const MAX_COMMENTS = 25; // Limit the feed to the last 25 comments
 
-      const thread = q(node, "[data-thread]");
-      
-      // --- 1. Render PARENT comments ---
-      (parents||[]).forEach(p => {
-        // Get the plain text from the parent body, stripping any HTML
-        const plainText = stripHtmlToText(p.body_html || "") || p.body || "";
-        // blockHtml will apply highlightTickers and escapeHtml internally
-        thread.appendChild(blockHtml(p, plainText, false));
-      });
-      
-      // --- 2. Render CURRENT comment ---
-      // Get the plain text from the current comment body, stripping any HTML
-      const cText = stripHtmlToText(comment.body_html || "") || comment.body || "";
-      // blockHtml will apply highlightTickers and escapeHtml internally
-      thread.appendChild(blockHtml(comment, cText, true));
+function renderNewComment({ comment, parents, post }){
+    const node = tmpl.content.firstElementChild.cloneNode(true);
+    
+    // --- Existing logic to populate the template node ---
+    q(node,"[data-author]").textContent = formatUser(comment.author);
+    q(node,"[data-score]").textContent = comment.score ?? 0;
+    q(node,"[data-time]").textContent = timeAgo(comment.created_utc*1000);
+    q(node,"[data-post-link]").textContent = post?.title || "(post)";
+    q(node,"[data-post-link]").href = post?.permalink || "#";
+    q(node,"[data-comment-link]").href = comment.permalink;
 
-      const ts = Math.min((comment.created_utc||0)*1000, Date.now());
-      if (ts > _lastShownMs) _lastShownMs = ts;
+    const thread = q(node, "[data-thread]");
+    
+    // --- 1. Render PARENT comments ---
+    (parents||[]).forEach(p => {
+        const plainText = stripHtmlToText(p.body_html || "") || p.body || "";
+        thread.appendChild(blockHtml(p, plainText, false));
+    });
+    
+    // --- 2. Render CURRENT comment ---
+    const cText = stripHtmlToText(comment.body_html || "") || comment.body || "";
+    thread.appendChild(blockHtml(comment, cText, true));
 
-      const commentId = comment.id || comment.name || comment.permalink;
-      const plain = stripHtmlToText(comment.body_html||"") || comment.body || "";
-      addCommentMentions(commentId, plain);
-      indexCommentMentions({...comment, post}, plain);
-
-      mainPane.innerHTML = "";
-      mainPane.appendChild(node);
-      statusEl.textContent = "live";
-    }
+    // --- Indexing for Ticker List (Move this here from pollOnce if you want it) ---
+    const commentId = comment.id || comment.name || comment.permalink;
+    const plain = stripHtmlToText(comment.body_html||"") || comment.body || "";
+    addCommentMentions(commentId, plain);
+    indexCommentMentions({...comment, post}, plain);
+    
+    // --- NEW CRITICAL STACKING LOGIC ---
+    
+    // 1. Add the new comment to the top (prepend)
+    mainPane.prepend(node);
+    
+    // 2. Remove oldest comments if the list gets too long
+    while (mainPane.children.length > MAX_COMMENTS) {
+        mainPane.removeChild(mainPane.lastChild);
+    }
+}
+// ------------------------------------
     function q(node, sel){ return node.querySelector(sel); }
 function blockHtml(meta, plainText, isCurrent=false){
   // Ticker highlighting is always applied to the plain text
@@ -625,6 +633,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
