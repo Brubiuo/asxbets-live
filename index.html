@@ -401,6 +401,9 @@ if (c.body_html) {
     let tickTimer = null;
     let healthTimer = null;
     let consecutiveFailures = 0;
+    const MAX_SHOWN_COMMENTS = 10; // Limit the total number of comments in the main pane
+
+function setPaused(p){
 
     function setPaused(p){
       paused = p;
@@ -601,6 +604,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
