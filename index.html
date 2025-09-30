@@ -266,7 +266,7 @@ initAndBoot();
         }
 
         const providedText = (e.body || e.snippet || "").trim();
-        const fallbackText = providedText || "(preloaded mention; full body not available yet)";
+        const fallbackText = providedText || "[Full comment body not yet available]";
         const meta = {
           id: cid,
           author: e.author || "u/unknown",
@@ -603,6 +603,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
