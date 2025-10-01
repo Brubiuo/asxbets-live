@@ -83,6 +83,20 @@
           </div>
           <ol id="top-tickers" class="space-y-1 text-[13px]"><li class="text-zinc-500">loading…</li></ol>
         </div>
+        <div class="glass rounded-2xl p-4 mb-4">
+  <h2 class="text-sm uppercase tracking-wider text-zinc-400 mb-3">ASX Search 🔍</h2>
+  
+  <form id="asx-search-form" onsubmit="searchMarketIndex(event)" class="flex">
+    <input type="text" id="asx-ticker-input" placeholder="Search ASX ticker, e.g. BHP" required 
+           class="flex-grow p-2 mr-2 text-sm text-zinc-900 bg-zinc-200 rounded-lg focus:ring-green-400 focus:border-green-400 border-none outline-none" 
+           style="background-color: rgba(255,255,255,0.9); color: rgb(var(--bg));">
+           
+    <button type="submit" 
+            class="btn-tip flex-shrink-0 inline-flex items-center justify-center !px-3 !py-2 text-xs sm:text-[12px] leading-none whitespace-nowrap"
+            style="font-size: 13px;">Search</button>
+  </form>
+  <p class="text-xs text-zinc-400 mt-2">Opens in a new tab.</p>
+</div>
         <div class="glass rounded-2xl p-4 max-h=[65vh] overflow-y-auto">
           <h2 class="text-sm uppercase tracking-wider text-zinc-400 mb-3">Recent Posts</h2>
           <div id="posts" class="space-y-3"></div>
@@ -142,6 +156,24 @@ const API_BASE_PATH = "/api-base.txt";
 let API_BASE = ""; 
 
 
+function searchMarketIndex(event) {
+    event.preventDefault(); 
+    
+    const inputElement = document.getElementById('asx-ticker-input');
+   
+    const ticker = inputElement.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    if (ticker) {
+        
+        const url = `https://www.marketindex.com.au/asx/${ticker}`;
+        
+       
+        window.open(url, '_blank');
+        
+        
+        inputElement.value = '';
+    }
+}
 async function initAndBoot(){
     try {
         const r = await fetch(API_BASE_PATH);
@@ -189,7 +221,7 @@ initAndBoot();
       return null;
     }
 
-    // ===== UI bits =====
+    
     const statusEl  = document.getElementById("status");
     const liveDot   = document.getElementById("liveDot");
     const mainPane  = document.getElementById("main-pane");
@@ -205,8 +237,7 @@ initAndBoot();
     }
     function clearErr() { errEl.style.display = 'none'; errEl.textContent = ""; }
 
-    // ===== ticker detection =====
-    // Initial set for ASX context (common ASX stocks)
+   
     let TICKER_ALLOW = new Set(["BHP","CBA","WBC","ANZ","NAB","CSL","RIO","FMG","XYZ"]);
     (async () => {
       try { const j = await fetchJson(API_BASE + "/tickers", { timeoutMs: 3000, retries: 0 }); if (j?.tickers?.length) TICKER_ALLOW = new Set(j.tickers.map(s=>String(s).toUpperCase())); } catch {}
@@ -221,7 +252,7 @@ initAndBoot();
     function stripHtmlToText(html){ const el=document.createElement("div"); el.innerHTML=html||""; return el.textContent||el.innerText||""; }
     function timeAgo(ms){ const s=Math.max(1,Math.floor((Date.now()-ms)/1000)); if(s<60)return s+"s ago"; const m=Math.floor(s/60); if(m<60)return m+"m ago"; const h=Math.floor(m/60); if(h<24)return h+"h ago"; const d=Math.floor(h/24); return d+"d ago"; }
 
-    // ===== Top tickers state (All other ticker logic remains the same) =====
+    
     const TOP_TICKERS_N = 15;
     const WINDOW_MS = 60*60*1000;
     const mentionQueue = []; const counts = new Map(); const countedComments = new Set(); const commentsByTicker = new Map();
@@ -252,7 +283,7 @@ initAndBoot();
         if (!e || !e.sym || typeof e.t !== "number") continue;
 
         const S = String(e.sym).toUpperCase();
-        const cid = e.commentId || `${S}-${e.t}`; // stable id for dedupe
+        const cid = e.commentId || `${S}-${e.t}`; 
         const tms = e.t;
 
         const alreadyCounted = countedComments.has(cid);
@@ -308,7 +339,7 @@ initAndBoot();
       }
       resetBtn.classList.toggle("hidden", hiddenTickers.size === 0);
     }
-    // modal
+    
     const modalEl = document.getElementById("commentsModal");
     const modalTitle = document.getElementById("modalTitle");
     const modalSubtitle = document.getElementById("modalSubtitle");
@@ -358,7 +389,7 @@ initAndBoot();
 const plain = (c.body_html ? stripHtmlToText(c.body_html) : (c.body || "")).trim();
 let hi = "";
 
-// The placeholder text used when indexing a preloaded comment mention
+
 const PLACEHOLDER = "(preloaded mention; full body not available yet)"; 
 
 if (c.body_html) {
@@ -395,13 +426,13 @@ if (c.body_html) {
       } catch {}
     });
 
-    // ===== live 5s poller (strict forward) =====
+    
     let _lastShownMs = 0;
     let paused = false;
     let tickTimer = null;
     let healthTimer = null;
     let consecutiveFailures = 0;
-    const MAX_SHOWN_COMMENTS = 4; // Limit the total number of comments in the main pane
+    const MAX_SHOWN_COMMENTS = 4; 
     
   function setPaused(p){
     paused = p;
@@ -409,7 +440,7 @@ if (c.body_html) {
     liveDot.classList.toggle("paused", paused);
     statusEl.textContent = paused ? "paused" : "live";
     if (paused) stopTimers(); else startTimers();
-} // <-- Correct closing brace
+} 
 
 pauseBtn.addEventListener("click", () => setPaused(!paused));
 
@@ -435,7 +466,7 @@ function startTimers(){
       }
     }
 
-// NEW CONTENT FOR pollOnce()
+
 async function pollOnce(){
     if (paused) return;
 
@@ -455,7 +486,7 @@ async function pollOnce(){
         return;
     }
     
-    // 1. Map to a standard payload structure
+    
     const payloads = list
         .map(item => ({ 
             comment: item.comment || item,
@@ -463,17 +494,17 @@ async function pollOnce(){
             post: item.post || { title: item.postTitle, permalink: item.postPermalink || item.permalink }
         }));
 
-    // 2. Filter for new comments (created *after* the last shown one)
+    
 const newComments = payloads
     .filter(payload => ((payload.comment?.created_utc || 0) * 1000) > _lastShownMs)
-    // 3. Sort in REVERSE chronological order (newest first) for display
+    
     .sort((a, b) => (b.comment.created_utc || 0) - (a.comment.created_utc || 0)); 
 
     if (newComments.length > 0) {
-        // 4. Render all the new comments
+        
         renderNewComments(newComments);
 
-        // 5. Update the timestamp to the latest comment we just processed
+        
         const latestComment = newComments[newComments.length - 1];
         _lastShownMs = Math.min((latestComment.comment.created_utc || 0) * 1000, Date.now());
     }
@@ -494,17 +525,17 @@ function renderNewComments(payloads) {
 
         const thread = q(node, "[data-thread]");
         
-        // --- 1. Render PARENT comments ---
+        
         (parents||[]).forEach(p => {
             const plainText = stripHtmlToText(p.body_html || "") || p.body || "";
             thread.appendChild(blockHtml(p, plainText, false));
         });
         
-        // --- 2. Render CURRENT comment ---
+        
         const cText = stripHtmlToText(comment.body_html || "") || comment.body || "";
         thread.appendChild(blockHtml(comment, cText, true));
 
-        // Ticker indexing and counting (remains per comment)
+        
         const commentId = comment.id || comment.name || comment.permalink;
         const plain = stripHtmlToText(comment.body_html||"") || comment.body || "";
         addCommentMentions(commentId, plain);
@@ -521,7 +552,7 @@ function renderNewComments(payloads) {
 }
 function q(node, sel){ return node.querySelector(sel); }
     function blockHtml(meta, plainText, isCurrent=false){
-  // Ticker highlighting is always applied to the plain text
+  
   const inner = highlightTickers(plainText);
   
   const wrap = document.createElement("div");
@@ -530,7 +561,7 @@ function q(node, sel){ return node.querySelector(sel); }
   wrap.innerHTML = `<div class="text-xs text-zinc-300 mb-2">u:${escapeHtml(formatUser(meta.author))} • ${timeAgo(meta.created_utc * 1000)} • score ${meta.score ?? 0}</div><div class="text-sm body-html">${inner}</div>`;
   return wrap;
 }
-    // ===== preload top tickers (1h) on boot, with retries =====
+    
     async function preheatTopTickers(minutes=60){
       for (let attempt = 1; attempt <= 6; attempt++) {
         const [r1, r2] = await Promise.allSettled([
@@ -562,7 +593,7 @@ function q(node, sel){ return node.querySelector(sel); }
       showErr("Top tickers preload had no data yet. It will fill as new comments arrive.");
     }
 
-    // ===== posts rail =====
+    
     let _lastPosts = [];
 
     async function loadPosts(){
@@ -589,7 +620,7 @@ function q(node, sel){ return node.querySelector(sel); }
       _lastPosts = list;
     }
 
-    // ===== boot =====
+   
 async function boot(){
     const h = await fetchJson(API_BASE + "/health", { timeoutMs: 2500, retries: 0 });
     if (!h?.ok) showErr("Backend health check failed. If this persists, your Worker may not be deployed.");
@@ -603,6 +634,7 @@ async function boot(){
 </body>
 
 </html>
+
 
 
 
